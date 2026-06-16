@@ -1,0 +1,305 @@
+{
+  "name": "AI Support Triage Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-ticket",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -16
+      ],
+      "id": "48cd2df0-b886-42b1-b10e-636c388b889a",
+      "name": "Webhook",
+      "webhookId": "d7f15a81-d571-4259-b536-159cf289eaff"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b9a8654f-f242-4c3e-ad96-1a6190c84f13",
+              "name": "customer_name",
+              "value": "={{$json.body.customer_name}}",
+              "type": "string"
+            },
+            {
+              "id": "39369ecd-24fe-4e1c-8e85-179b0daa4c18",
+              "name": "message",
+              "value": "={{$json.body.message}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "8d947daa-7bf8-45a5-bff8-fea614b4cf7d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a support ticket analyzer.\n\nAnalyze the support message.\n\nReturn ONLY JSON.\n\nFormat:\n\n{\n \"customer_name\":\"\",\n \"issue\":\"\",\n \"priority\":\"High or Normal\",\n \"summary\":\"\"\n}\n\nCustomer Name:\n{{$json.customer_name}}\n\nMessage:\n{{$json.message}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "52caf5ba-fa58-4d83-a035-0885a4121d29",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "3b3b33c6-3e76-4d53-826d-e590cc5a7ccd",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "RXqGfEme1StPI1ob",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.output;\n\nconst data = JSON.parse(text);\n\nreturn [\n  {\n    json: data\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -16
+      ],
+      "id": "7f7def54-04a8-47ce-90ab-218af7405a34",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "20ab77f4-ce6c-4f81-b32c-09f89c2f60b7",
+              "leftValue": "={{$json.priority}}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        576,
+        -16
+      ],
+      "id": "444ec487-db02-4f25-8471-c618848d577c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "fromEmail": "roshanigabhale2006@gmail.com",
+        "toEmail": "roshanigabhale2710@gmail.com",
+        "subject": "URGENT: High Priority Support Ticket",
+        "html": "=Customer: {{$json.customer_name}}\n\nIssue: {{$json.issue}}\n\nSummary:\n{{$json.summary}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        -112
+      ],
+      "id": "875a18f1-842c-457f-8906-457605859582",
+      "name": "Send an Email",
+      "webhookId": "0755c799-d041-45c5-abad-7fd66e98b0c1",
+      "credentials": {
+        "smtp": {
+          "id": "sscvVSQ64LQWlkcO",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8bd8964-a89d-47de-ab5d-cf70acdaa8e2",
+              "name": "status",
+              "value": "Normal Priority",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        80
+      ],
+      "id": "dd960a2f-db68-414e-b1c1-8b4e113cf266",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"customer\": \"{{$json.customer_name}}\",\n  \"priority\": \"{{$json.priority}}\",\n  \"issue\": \"{{$json.issue}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "3324493f-1730-4397-ac44-8693737aa4ca",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d47b3b16-2e91-4760-8adb-779798180262",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "94156d8b8d67ec35be94c285968306e4dba58ac9b2d0b24e884095f901350c56"
+  },
+  "nodeGroups": [],
+  "id": "i49Ay0qVZrcS4hG3",
+  "tags": []
+}
